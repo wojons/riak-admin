@@ -57,9 +57,27 @@ if (($_GET['cmd'] == 'delBucket') && ($_GET['bucketName'])) {
         $key = new RiakObject($riak, $bucket, $keys[$i]);
         $key->delete();
     }
-    usleep(5000);
     // i don't need to delete the bucket, since it will be removed automatically when no keys are in it
 }
+
+// update the KEY with new $data
+if (($_GET['cmd'] == 'updateKey') && (isset($_POST['key'][0])) && (isset($_POST['value'][0]))) {
+    $arrVal = $_POST['value'];
+    $arrKey = $_POST['key'];
+    
+    foreach ($arrKey AS $index => $keyTmp) {
+        if ($arrVal[$index]) {
+            $value = $arrVal[$index];
+            $data[$keyTmp] = $value;
+        }
+    }
+    
+    $obj = $bucket->newObject($_GET['key'], $data);
+    $obj->store();
+    
+    echo '<div class="msg">Value updated in RIAK.</div>';
+}
+
 ?>
 <html>
 <head>
@@ -74,8 +92,8 @@ if (($_GET['cmd'] == 'delBucket') && ($_GET['bucketName'])) {
         .bucketNameSelected {font-weight: bold;}
         .bucketActions { font-weight: bold; font-size: 10px; text-decoration: none;}
         .content {margin: 10px;}
-        .td_left { background-color: #f8f8f8; border: 1px dashed; border-right: 0px; }
-        .td_right { border: 1px dashed; border-left: 0px; }
+        .td_left { background-color: #f8f8f8; border: 1px dashed; border-right: 0px; display: table-cell; width:250px; padding: 5px; vertical-align: middle;}
+        .td_right { border: 1px dashed; border-left: 0px; display: table-cell; width: 600px; padding: 5px; vertical-align: middle;}
         .msg { border: 1px dashed; text-align: center; margin-left: auto; margin-right: auto; margin: 10px; font-weight: bold; background-color: #f0f0f0; padding: 7px;}
         .msgSmall { font-size: 12px; margin-left: auto; margin-right: auto; text-align: justify; padding: 5px; }
     </style>
@@ -148,16 +166,18 @@ function right_content() {
 
         // pagination ???
         
-        $ret .= '<table width="100%"><tr><td class="td_left" align="center"><b>KEY NAME</b></td><td class="td_right" align="center" colspan="2"><b>ACTIONS</b></td></tr>';
+        $ret .= '<div class="content"><div class="td_left"><b>KEY NAME</b></div><div class="td_right"><b>ACTIONS</b></div></div>';
         $total=0;
         for ($i=0; $i<count($keys); $i++){
             $total++;
             $ret .= '
-            <tr>
-                <td class="td_left"><b>' . $keys[$i] . '</b></td>
-                <td class="td_right" align="center"><a href="?cmd=useBucket&bucketName=' . $_GET['bucketName'] .'&key=' . $keys[$i] . '">View/Modify</a></td>
-                <td class="td_right" align="center"><a href="?cmd=deleteKey&bucketName=' . $_GET['bucketName'] .'&key=' . $keys[$i] . '">Delete</a></td>
-            </tr>';
+            <div class="content">
+                <div class="td_left"><b>' . $keys[$i] . '</b></td>
+                <div class="td_right">
+                    <a href="?cmd=useBucket&bucketName=' . $_GET['bucketName'] .'&key=' . $keys[$i] . '">View/Modify</a> | 
+                    <a href="?cmd=deleteKey&bucketName=' . $_GET['bucketName'] .'&key=' . $keys[$i] . '">Delete</a>
+                </div>
+            </div>';
         }
         if ($total==0){
             $ret = '
@@ -167,17 +187,32 @@ function right_content() {
     }
     // else if I have a bucket selected and a KEY, I'll display the key properties
     elseif ((isset($bucket)) && (isset($_GET['key']))){
-        $ret .= '<table width="100%"><tr><td class="td_left" align="center"><b>FIELD</b></td><td class="td_right" align="center"><b>VALUE</b></td></tr>';
+        $ret .= '
+        <form name="updateKey" method="POST" action="?cmd=updateKey&bucketName='.$_GET['bucketName'].'&key='.$_GET['key'].'">
+        <div class="content">
+            <div class="td_left" align="center"><b>FIELD</b></div>
+            <div class="td_right" align="center"><b>VALUE</b></div>
+        </div>';
         $total = 0;
         foreach ($key->reload()->getData() as $key=>$value){
             $total++;
-            $ret .= '<tr><td align="right" class="td_left">' . $key .'</td><td class="td_right"><textarea rows="3" cols="30">' . $value . "</textarea></td></tr>";
+            $ret .= '
+            <div class="content">
+                <div class="td_left"><input type="text" name="key[]" value="' . $key .'"></div>
+                <div class="td_right"><textarea name="value[]" rows="3" cols="30">' . $value . "</textarea></div>
+            </div>";
         }
         if ($total==0){
             $ret = '
             <div class="msg">For some reasons, this key could not be read.</div>';
         }
-        $ret .= '</table>';
+        $ret .= '
+        <div style="text-align: center;">
+            <input type="submit" name="ok" value="Save" align="center">
+            <a href="#" onClick="document.getElementById(\'fieldList\').innerHTML=document.getElementById(\'fieldList\').innerHTML + \'<div class=content><div class=td_left><input type=text name=key[]></div><div class=td_right><textarea name=value[] rows=3 cols=30></textarea></div></div>\'">Add another key => value!</a>
+        </div>
+        <div id="fieldList"></div>
+        </form>';
     }
     // first page
     else {

@@ -11,11 +11,11 @@ Available actions (v0.1):
 - create a bucket
 - delete a bucket (with all keys in it)
 - view a key
+- modify a key
 - delete a key
 
 Further actions:
 - add a new key (binary and JSON)
-- modify a key
 - error reporting
 - change bucket properties
 - find a key in a bucket based on key=>value

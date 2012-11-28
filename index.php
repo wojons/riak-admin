@@ -194,7 +194,8 @@ function left_menu() {
     else {
         $ret .= 'List of current buckets:
             <ul type="square">';
-        for ($i=0; $i<count($buckets);$i++){
+        $total = count($buckets);
+        for ($i=0; $i<$total;$i++){
             if ( $buckets[$i]->getName() == $_GET['bucketName'] ){
                 $ret .= '<li class="bucketNameSelected"><a href="?cmd=useBucket&bucketName='.$buckets[$i]->getName().'">'.$buckets[$i]->getName().'</a>';
             }
@@ -227,9 +228,8 @@ function right_content() {
             <div class="td_left" align="center"><b>KEY NAME</b></div>
             <div class="td_right" align="center"><b>ACTIONS</b></div>
         </div>';
-        $total=0;
-        for ($i=0; $i<count($keys); $i++){
-            $total++;
+        $total=count($keys);
+        for ($i=0; $i<$total; $i++){
             $ret .= '
             <div class="content">
                 <div class="td_left"><b>' . $keys[$i] . '</b></div>
@@ -239,7 +239,7 @@ function right_content() {
                 </div>
             </div>';
         }
-        if ($total==0){
+        if (isset($keys[0]) == false){
             $ret = '
             <div class="msg">No keys found in this bucket.</div>';
         }

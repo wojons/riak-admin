@@ -194,15 +194,14 @@ function left_menu() {
     else {
         $ret .= 'List of current buckets:
             <ul type="square">';
-        $total = count($buckets);
-        for ($i=0; $i<$total;$i++){
-            if ( $buckets[$i]->getName() == $_GET['bucketName'] ){
-                $ret .= '<li class="bucketNameSelected"><a href="?cmd=useBucket&bucketName='.$buckets[$i]->getName().'">'.$buckets[$i]->getName().'</a>';
+		foreach($buckets as &$dat)	{
+            if ( $dat->getName() == $_GET['bucketName'] ){
+                $ret .= '<li class="bucketNameSelected"><a href="?cmd=useBucket&bucketName='.$dat->getName().'">'.$dat->getName().'</a>';
             }
             else {
-                $ret .= '<li class="bucketName"><a href="?cmd=useBucket&bucketName='.$buckets[$i]->getName().'">'.$buckets[$i]->getName().'</a>';
+                $ret .= '<li class="bucketName"><a href="?cmd=useBucket&bucketName='.$dat->getName().'">'.$dat->getName().'</a>';
             }
-            $ret .= ' <a href="?cmd=delBucket&bucketName='.$buckets[$i]->getName().'" class="bucketActions">[ Delete bucket ]</a></li>';
+            $ret .= ' <a href="?cmd=delBucket&bucketName='.$dat->getName().'" class="bucketActions">[ Delete bucket ]</a></li>';
         }
         $ret .= '
             </ul>';
@@ -217,7 +216,7 @@ function right_content() {
 
     $ret = '';
     // if i have a bucket selected, but no KEY, I'll display all keys from it
-    if ((isset($bucket) && (!isset($_GET['key'])))){
+    if ((isset($bucket) && (isset($_GET['key']) == false))){
         $keys=$bucket->getKeys();
 
         // pagination ???
@@ -228,14 +227,15 @@ function right_content() {
             <div class="td_left" align="center"><b>KEY NAME</b></div>
             <div class="td_right" align="center"><b>ACTIONS</b></div>
         </div>';
-        $total=count($keys);
-        for ($i=0; $i<$total; $i++){
+        //$total=count($keys);
+        //for ($i=0; $i<$total; $i++){
+		foreach($keys as &$dat)	{
             $ret .= '
             <div class="content">
-                <div class="td_left"><b>' . $keys[$i] . '</b></div>
+                <div class="td_left"><b>' . $dat . '</b></div>
                 <div class="td_right">
-                    <a href="?cmd=useBucket&bucketName=' . $_GET['bucketName'] .'&key=' . $keys[$i] . '">View/Modify</a> | 
-                    <a href="?cmd=deleteKey&bucketName=' . $_GET['bucketName'] .'&key=' . $keys[$i] . '">Delete</a>
+                    <a href="?cmd=useBucket&bucketName=' . $_GET['bucketName'] .'&key=' . $dat . '">View/Modify</a> | 
+                    <a href="?cmd=deleteKey&bucketName=' . $_GET['bucketName'] .'&key=' . $dat . '">Delete</a>
                 </div>
             </div>';
         }
@@ -285,8 +285,7 @@ function right_content() {
     return $ret;
 }
 
-$end_page = microtime();
-$page_generation = $end_page - $start_page;
+$page_generation = microtime() - $start_page;
 echo '<div class="msg">It took me ' . number_format($page_generation, 2) .' seconds to generate this page...</div>';
 ?>
 <br><br>

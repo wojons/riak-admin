@@ -7,7 +7,6 @@
 
 define('VERSION', '0.1');            // Riak Admin version
 
-//define('HOST', '88.198.156.124');   // your RIAK server IP
 define('HOST', '127.0.0.1');   // your RIAK server IP
 define('PORT', 8098);                // your RIAK server PORT
 define('VERBOSE', true);
@@ -37,7 +36,7 @@ switch($_GET['cmd'])	{
 		$backend->deleteBucket();
 	break;
 	case 'updateKey':
-			$backend->updateKey($_GET['key'], array_combine($_POST['key'], $_POST['value']));
+		$backend->updateKey($_GET['key'], array_combine($_POST['key'], $_POST['value']));
 		echo '<div class="msg">Value updated in RIAK.</div>';
 	break;
 }
@@ -179,7 +178,7 @@ function left_menu() {
     // screate a new bucket
     $ret = '
     <center><h3>RiakAdmin v'.VERSION.' @ '.HOST.'</h3>
-    <form name="createBucket" method="GET" action="?cmd=createBucket">
+    <form name="createBucket" method="GET" action="">
         <input type="text" name="bucketName" value="Create a new bucket" onClick="this.value=\'\';">
         <input type="submit" name="ok" value="Create">
         <input type="hidden" name="cmd" value="createBucket"/>

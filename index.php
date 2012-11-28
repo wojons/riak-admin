@@ -53,9 +53,7 @@ switch($_GET['cmd'])	{
 		$backend->deleteBucket();
 	break;
 	case 'updateKey':
-		foreach(array_combine($_POST['key'], $_POST['value']) as $dex=>$dat)	{
-			$backend->updateKey($dex, $dat);
-		}
+			$backend->updateKey($_GET['key'], array_combine($_POST['key'], $_POST['value']));
 		echo '<div class="msg">Value updated in RIAK.</div>';
 	break;
 }
@@ -178,9 +176,7 @@ class riakAdminBackend	{
 	
 	function updateKey($key, $value, $bucketName=null)	{
 		$bucketName = ($bucketName != null) ? $bucketName : $this->activeBucket;
-		print $key;
 		if($bucketName==$this->activeBucket || $this->switchBucket($bucketName) == true)	{
-			print $value;
 			$this->buckets[$bucketName]->newObject($key)->setData($value)->store();
 		}
 	}

@@ -26,22 +26,6 @@ $start_page = microtime();
 require_once ("lib/riak-client.php");
 $backend = new riakAdminBackend($_GET['bucketName']);
 
-$riak =& $backend->riak;
-//var_dump($backend->riak);
-/*
-// init the RIAK connection
-$riak = new RiakClient(HOST, PORT);
-if (!$riak->isAlive()){
-    die ("I couldn't ping the server. Check the HOST AND PORT settings...");
-}
-*/
-// init the $bucket && $key
-/*
-if (isset($_GET['bucketName'])){
-    $bucket = new RiakBucket($riak, $_GET['bucketName']);
-    $key = new RiakObject($riak, $bucket, $_GET['key']);
-}
-*/
 switch($_GET['cmd'])	{
 	case 'deleteKey':
 		$backend->deleteKey($_GET['key']);
@@ -57,52 +41,6 @@ switch($_GET['cmd'])	{
 		echo '<div class="msg">Value updated in RIAK.</div>';
 	break;
 }
-$bucket =& $backend->buckets[$_GET['bucketName']];
-/*
-// delete a key
-if (($_GET['cmd'] == "deleteKey") && ($_GET['bucketName']) && ($_GET['key'])){
-    $key->delete();
-    $_GET['key']='';
-}
-*/
-/*
-// create a bucket with key=>value : "created"=>1
-if (($_GET['cmd'] == 'createBucket') && ($_POST['bucketName'])) {
-    $data=array("created"=>1);
-    $bucket = new RiakBucket ($riak, $_POST['bucketName']);
-    $x = $bucket->newObject("", $data);
-    $x->store();
-}
-*/
-/*
-// delete a bucket and all keys from it
-if (($_GET['cmd'] == 'delBucket') && ($_GET['bucketName'])) {
-    $keys = $bucket->getKeys();
-    for ($i=0; $i<count($keys); $i++) {
-        $key = new RiakObject($riak, $bucket, $keys[$i]);
-        $key->delete();
-    }
-    // i don't need to delete the bucket, since it will be removed automatically when no keys are in it
-}
-*/
-// update the KEY with new $data
-/*if (($_GET['cmd'] == 'updateKey') && (isset($_POST['key'][0])) && (isset($_POST['value'][0]))) {
-    $arrVal = $_POST['value'];
-    $arrKey = $_POST['key'];
-    
-    foreach ($arrKey AS $index => $keyTmp) {
-        if ($arrVal[$index]) {
-            $value = $arrVal[$index];
-            $data[$keyTmp] = $value;
-        }
-    }
-    
-    $obj = $bucket->newObject($_GET['key'], $data);
-    $obj->store();
-    
-    echo '<div class="msg">Value updated in RIAK.</div>';
-}*/
-
 
 class riakAdminBackend	{
 	
@@ -164,6 +102,8 @@ class riakAdminBackend	{
 	}
 	
 	function deleteBucket($bucketName=null)	{
+		ignore_user_abort(true); //once you start you cant stop
+		set_time_limit(0); //this could take a while
 		$bucketName = ($bucketName != null) ? $bucketName : $this->activeBucket;
 		if($this->bucketInPool($bucketName) == true)	{
 			$keys = $this->buckets[$bucketName]->getKeys();
@@ -188,6 +128,10 @@ class riakAdminBackend	{
 		return false;
 	}
 }
+
+//stuff so the lower html does not need to be edited yet
+$riak =& $backend->riak;
+$bucket =& $backend->buckets[$_GET['bucketName']];
 
 ?>
 <html>

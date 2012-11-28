@@ -92,8 +92,8 @@ if (($_GET['cmd'] == 'updateKey') && (isset($_POST['key'][0])) && (isset($_POST[
         .bucketNameSelected {font-weight: bold;}
         .bucketActions { font-weight: bold; font-size: 10px; text-decoration: none;}
         .content {margin: 10px;}
-        .td_left { background-color: #f8f8f8; border: 1px dashed; border-right: 0px; display: table-cell; width:250px; padding: 5px; vertical-align: middle;}
-        .td_right { border: 1px dashed; border-left: 0px; display: table-cell; width: 600px; padding: 5px; vertical-align: middle;}
+        .td_left { background-color: #f8f8f8; border: 1px dashed; border-right: 0px; display: table-cell; width:250px; padding: 7px; vertical-align: middle;}
+        .td_right { border: 1px dashed; border-left: 0px; display: table-cell; width: 600px; padding: 7px; vertical-align: middle;}
         .msg { border: 1px dashed; text-align: center; margin-left: auto; margin-right: auto; margin: 10px; font-weight: bold; background-color: #f0f0f0; padding: 7px;}
         .msgSmall { font-size: 12px; margin-left: auto; margin-right: auto; text-align: justify; padding: 5px; }
     </style>
@@ -158,21 +158,25 @@ function left_menu() {
 function right_content() {
     global $riak, $bucket, $key, $_GET, $_POST;
 
-    $ret = '
-    <div class="content">';
+    $ret = '';
     // if i have a bucket selected, but no KEY, I'll display all keys from it
     if ((isset($bucket) && (!isset($_GET['key'])))){
         $keys=$bucket->getKeys();
 
         // pagination ???
         
-        $ret .= '<div class="content"><div class="td_left"><b>KEY NAME</b></div><div class="td_right"><b>ACTIONS</b></div></div>';
+        $ret .= '
+        <div class="content">
+            <h3>Selected BUCKET: "'.$_GET['bucketName'].'"</h3>
+            <div class="td_left" align="center"><b>KEY NAME</b></div>
+            <div class="td_right" align="center"><b>ACTIONS</b></div>
+        </div>';
         $total=0;
         for ($i=0; $i<count($keys); $i++){
             $total++;
             $ret .= '
             <div class="content">
-                <div class="td_left"><b>' . $keys[$i] . '</b></td>
+                <div class="td_left"><b>' . $keys[$i] . '</b></div>
                 <div class="td_right">
                     <a href="?cmd=useBucket&bucketName=' . $_GET['bucketName'] .'&key=' . $keys[$i] . '">View/Modify</a> | 
                     <a href="?cmd=deleteKey&bucketName=' . $_GET['bucketName'] .'&key=' . $keys[$i] . '">Delete</a>
@@ -190,6 +194,7 @@ function right_content() {
         $ret .= '
         <form name="updateKey" method="POST" action="?cmd=updateKey&bucketName='.$_GET['bucketName'].'&key='.$_GET['key'].'">
         <div class="content">
+            <h3>Selected KEY: "'.$_GET['key'].'"</h3>
             <div class="td_left" align="center"><b>FIELD</b></div>
             <div class="td_right" align="center"><b>VALUE</b></div>
         </div>';

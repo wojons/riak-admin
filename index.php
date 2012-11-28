@@ -7,7 +7,8 @@
 
 define('VERSION', '0.1');            // Riak Admin version
 
-define('HOST', '192.168.219.128');   // your RIAK server IP
+//define('HOST', '88.198.156.124');   // your RIAK server IP
+define('HOST', '127.0.0.1');   // your RIAK server IP
 define('PORT', 8098);                // your RIAK server PORT
 define('VERBOSE', true);
 
@@ -23,25 +24,50 @@ error_reporting(1);
 
 $start_page = microtime();
 require_once ("lib/riak-client.php");
+$backend = new riakAdminBackend($_GET['bucketName']);
 
+$riak =& $backend->riak;
+//var_dump($backend->riak);
+/*
 // init the RIAK connection
 $riak = new RiakClient(HOST, PORT);
 if (!$riak->isAlive()){
     die ("I couldn't ping the server. Check the HOST AND PORT settings...");
 }
-
+*/
 // init the $bucket && $key
+/*
 if (isset($_GET['bucketName'])){
     $bucket = new RiakBucket($riak, $_GET['bucketName']);
     $key = new RiakObject($riak, $bucket, $_GET['key']);
 }
-
+*/
+switch($_GET['cmd'])	{
+	case 'deleteKey':
+		$backend->deleteKey($_GET['key']);
+	break;
+	case 'createBucket':
+		$backend->createBucket();
+	break;
+	case 'delBucket':
+		$backend->deleteBucket();
+	break;
+	case 'updateKey':
+		foreach(array_combine($_POST['key'], $_POST['value']) as $dex=>$dat)	{
+			$backend->updateKey($dex, $dat);
+		}
+		echo '<div class="msg">Value updated in RIAK.</div>';
+	break;
+}
+$bucket =& $backend->buckets[$_GET['bucketName']];
+/*
 // delete a key
 if (($_GET['cmd'] == "deleteKey") && ($_GET['bucketName']) && ($_GET['key'])){
     $key->delete();
     $_GET['key']='';
 }
-
+*/
+/*
 // create a bucket with key=>value : "created"=>1
 if (($_GET['cmd'] == 'createBucket') && ($_POST['bucketName'])) {
     $data=array("created"=>1);
@@ -49,7 +75,8 @@ if (($_GET['cmd'] == 'createBucket') && ($_POST['bucketName'])) {
     $x = $bucket->newObject("", $data);
     $x->store();
 }
-
+*/
+/*
 // delete a bucket and all keys from it
 if (($_GET['cmd'] == 'delBucket') && ($_GET['bucketName'])) {
     $keys = $bucket->getKeys();
@@ -59,9 +86,9 @@ if (($_GET['cmd'] == 'delBucket') && ($_GET['bucketName'])) {
     }
     // i don't need to delete the bucket, since it will be removed automatically when no keys are in it
 }
-
+*/
 // update the KEY with new $data
-if (($_GET['cmd'] == 'updateKey') && (isset($_POST['key'][0])) && (isset($_POST['value'][0]))) {
+/*if (($_GET['cmd'] == 'updateKey') && (isset($_POST['key'][0])) && (isset($_POST['value'][0]))) {
     $arrVal = $_POST['value'];
     $arrKey = $_POST['key'];
     
@@ -76,6 +103,94 @@ if (($_GET['cmd'] == 'updateKey') && (isset($_POST['key'][0])) && (isset($_POST[
     $obj->store();
     
     echo '<div class="msg">Value updated in RIAK.</div>';
+}*/
+
+
+class riakAdminBackend	{
+	
+	public $riak;
+	public $activeBucketObj = null;
+	private $activeBucket = "";
+	
+	// init the RIAK connection
+	function __construct($bucketName=null)	{
+		$this->riak = new RiakClient(HOST, PORT);
+		if ($this->riak->isAlive() == false){
+			die ("I couldn't ping the server. Check the HOST AND PORT settings...");
+		}
+		
+		// init the $bucket && $key
+		if ($bucketName != null){
+			$this->pickBucket($bucketName);
+		}
+	}
+	
+	function pickBucket($bucketName, $ghost=false)	{ //if ghost flag is true then make the bucket with some random number for short term use
+		$ghost = ($ghost == true) ? rand() : "";
+		$this->buckets[$bucketName.$ghost] = $this->riak->bucket($bucketName);
+		$this->switchBucket($bucketName.$ghost);
+		return $this->bucket[$bucketName.$ghost];
+	}
+	
+	function switchBucket($bucketName)	{
+		if($bucketName == $this->activeBucket || $this->bucketInPool($bucketName) == true)	{
+			$this->activeBucket = $bucketName;
+			return $this->bucket[$bucketName];
+		}
+		return $this->pickBucket($bucketName, false);
+	}
+	
+	function createBucket($bucketName=null, $key, $value)	{
+		$bucketName = ($bucketName != null) ? $bucketName : $this->activeBucket;
+		if($bucketName == $this->activeBucket || $this->bucketInPool($bucketName) == false) {
+			$this->buckets[$bucketName]->newObject("created")->setData(1)->store();
+			return true;
+		}
+		return false;
+	}
+	
+	function bucketInPool($bucketName)	{
+		if(array_key_exists($bucketName, $this->buckets) == true)	{
+			return true;
+		}
+		return false;
+	}
+	
+	function deleteKey($key, $bucketName=null, $fast=false)	{
+		$bucketName = ($bucketName != null) ? $bucketName : $this->activeBucket;
+		if($bucketName == $this->activeBucket || $this->bucketInPool($bucketName) == true && ($fast == true || $this->keyVaild($key) == true))	{
+			$this->buckets[$bucketName]->get($key)->delete();
+			return true;
+		}
+		return false;
+	}
+	
+	function deleteBucket($bucketName=null)	{
+		$bucketName = ($bucketName != null) ? $bucketName : $this->activeBucket;
+		if($this->bucketInPool($bucketName) == true)	{
+			$keys = $this->buckets[$bucketName]->getKeys();
+			foreach($keys as $dat)	{
+				$this->deleteKey($dat);
+			}
+			// i don't need to delete the bucket, since it will be removed automatically when no keys are in it
+		}
+	}
+	
+	function updateKey($key, $value, $bucketName=null)	{
+		$bucketName = ($bucketName != null) ? $bucketName : $this->activeBucket;
+		print $key;
+		if($bucketName==$this->activeBucket || $this->switchBucket($bucketName) == true)	{
+			print $value;
+			$this->buckets[$bucketName]->newObject($key)->setData($value)->store();
+		}
+	}
+	
+	function keyVaild($key)	{
+		if(is_string($key) == true)	{
+			return true;
+		}
+		return false;
+	}
 }
 
 ?>
@@ -118,14 +233,16 @@ if (($_GET['cmd'] == 'updateKey') && (isset($_POST['key'][0])) && (isset($_POST[
 
 <?php
 // left menu: create new bucket + show list of current ones
+
 function left_menu() {
     global $riak, $_GET;
     // screate a new bucket
     $ret = '
     <center><h3>RiakAdmin v'.VERSION.' @ '.HOST.'</h3>
-    <form name="createBucket" method="POST" action="?cmd=createBucket">
+    <form name="createBucket" method="GET" action="?cmd=createBucket">
         <input type="text" name="bucketName" value="Create a new bucket" onClick="this.value=\'\';">
         <input type="submit" name="ok" value="Create">
+        <input type="hidden" name="cmd" value="createBucket"/>
     </form></center>
     <div class="msgSmall">When creating a new bucket, a key named "created" with value "1" will be set in that bucket.</div>
     <hr>';
@@ -187,6 +304,7 @@ function right_content() {
     }
     // else if I have a bucket selected and a KEY, I'll display the key properties
     elseif ((isset($bucket)) && (isset($_GET['key']))){
+		$key = $bucket->get($_GET['key']);
         $ret .= '
         <form name="updateKey" method="POST" action="?cmd=updateKey&bucketName='.$_GET['bucketName'].'&key='.$_GET['key'].'">
         <div class="content">

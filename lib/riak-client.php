@@ -1124,7 +1124,7 @@ class RiakObject {
    */
   function setData($data) { 
     $this->data = $data; 
-    return $this->data;
+    return $this;
   }
 
   /**
@@ -2078,4 +2078,5 @@ class RiakUtils {
     return $retVal;
   }
 }
-?>
+
+
